@@ -1,7 +1,5 @@
 import 'dart:math';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:homeshare/Screens/home.dart';
 import 'package:homeshare/services/gmail_auth_service.dart';
 import 'package:homeshare/services/phone_auth_service.dart';
 import 'package:homeshare/settings/app_routes.dart';
@@ -262,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         IconButton(
-                          icon: Image.asset('assets/google.png', height: 40),
+                          icon: Image.asset('assets/google.png', height: 50),
                           onPressed: () async {
                             try {
                               await Provider.of<GmailAuthProvider>(
@@ -281,9 +279,15 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(width: 20),
                         IconButton(
-                          icon: Image.asset('assets/apple.png', height: 40),
+                          icon: Image.asset('assets/apple.png', height: 50),
                           onPressed: () {},
                         ),
+                        const SizedBox(width: 20),
+                        IconButton(
+                          icon: Image.asset('assets/facebook.png', height: 40),
+                          onPressed: () {},
+                        ),
+                      
                       ],
                     ),
                   ],
