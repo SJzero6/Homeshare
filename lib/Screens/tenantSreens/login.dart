@@ -1,7 +1,10 @@
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:homeshare/Screens/home.dart';
 import 'package:homeshare/services/gmail_auth_service.dart';
+import 'package:homeshare/services/phone_auth_service.dart';
+import 'package:homeshare/settings/app_routes.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,7 +14,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   late AnimationController _blobController;
   late AnimationController _cardController;
 
@@ -41,39 +45,31 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _cardController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _cardController, curve: Curves.easeOut));
 
     _fadeAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(CurvedAnimation(
-      parent: _cardController,
-      curve: Curves.easeIn,
-    ));
+    ).animate(CurvedAnimation(parent: _cardController, curve: Curves.easeIn));
   }
 
   @override
   void dispose() {
     _blobController.dispose();
     _cardController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
     super.dispose();
   }
 
-final phoneController = TextEditingController();
-final passwordController = TextEditingController();
-final confirmPasswordController = TextEditingController();
-
-String _verificationId = '';
-bool _isOtpSent = false;
-
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
+    final authProvider = Provider.of<OEmailAuthProvider>(context);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Stack(
@@ -107,7 +103,9 @@ bool _isOtpSent = false;
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[850] : Colors.grey.shade200,
+                          color: isDark
+                              ? Colors.grey[850]
+                              : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(30),
                           boxShadow: [
                             BoxShadow(
@@ -130,17 +128,23 @@ bool _isOtpSent = false;
                             ),
                             const SizedBox(height: 20),
 
-                            const Text("Mobile Number", style: TextStyle(color: Colors.green)),
+                            const Text(
+                              "Email",
+                              style: TextStyle(color: Colors.green),
+                            ),
                             const SizedBox(height: 5),
                             _buildTextField(
-                              controller: phoneController,
-                              hintText: "Enter number",
-                              icon: Icons.phone,
+                              controller: emailController,
+                              hintText: "Enter Email",
+                              icon: Icons.mail,
                               obscure: false,
                             ),
 
                             const SizedBox(height: 20),
-                            const Text("Password", style: TextStyle(color: Colors.green)),
+                            const Text(
+                              "Password",
+                              style: TextStyle(color: Colors.green),
+                            ),
                             const SizedBox(height: 5),
                             _buildTextField(
                               controller: passwordController,
@@ -151,7 +155,10 @@ bool _isOtpSent = false;
 
                             if (_isSignUp) ...[
                               const SizedBox(height: 20),
-                              const Text("Confirm Password", style: TextStyle(color: Colors.green)),
+                              const Text(
+                                "Confirm Password",
+                                style: TextStyle(color: Colors.green),
+                              ),
                               const SizedBox(height: 5),
                               _buildTextField(
                                 controller: confirmPasswordController,
@@ -166,27 +173,67 @@ bool _isOtpSent = false;
                               width: double.infinity,
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: () async{
-                                  if (_isSignUp) {
-    await _startPhoneVerification();
-  } else {
-    // Handle sign-in here
-  }
-                                },
+                                onPressed: authProvider.isLoading
+                                    ? null
+                                    : () async {
+                                        final email = emailController.text
+                                            .trim();
+                                        final password = passwordController.text
+                                            .trim();
+
+                                        if (email.isEmpty || password.isEmpty) {
+                                          _showError(
+                                            "Email and password cannot be empty",
+                                          );
+                                          return;
+                                        }
+
+                                        try {
+                                          if (_isSignUp) {
+                                            final confirmPassword =
+                                                confirmPasswordController.text
+                                                    .trim();
+                                            await authProvider.signUp(
+                                              email,
+                                              password,
+                                              confirmPassword,
+                                            );
+
+                                            // Call dialog separately
+                                            _showSignUpSuccessDialog();
+                                          } else {
+                                            await authProvider.signIn(
+                                              email,
+                                              password,
+                                            );
+                                            Navigator.pushReplacementNamed(
+                                              context,
+                                              AppRoutes.home,
+                                            ); // go to home after login
+                                          }
+                                        } catch (e) {
+                                          _showError(e.toString());
+                                        }
+                                      },
+
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(25),
                                   ),
                                 ),
-                                child: Text(
-                                  _isSignUp ? "Sign Up" : "Sign In",
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                                child: authProvider.isLoading
+                                    ? CircularProgressIndicator(
+                                        color: Colors.green,
+                                      )
+                                    : Text(
+                                        _isSignUp ? "Sign Up" : "Sign In",
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                               ),
                             ),
                           ],
@@ -202,7 +249,10 @@ bool _isOtpSent = false;
                         Expanded(child: Divider(color: Colors.grey)),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text("OR", style: TextStyle(color: Colors.grey)),
+                          child: Text(
+                            "OR",
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                         Expanded(child: Divider(color: Colors.grey)),
                       ],
@@ -213,14 +263,20 @@ bool _isOtpSent = false;
                       children: [
                         IconButton(
                           icon: Image.asset('assets/google.png', height: 40),
-                          onPressed: () async{
+                          onPressed: () async {
                             try {
-      await Provider.of<GmailAuthProvider>(context, listen: false).signInWithGoogle();
-      // Navigate to home screen or show success
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Google Sign-In failed')));
-    }
-  
+                              await Provider.of<GmailAuthProvider>(
+                                context,
+                                listen: false,
+                              ).signInWithGoogle();
+                              // Navigate to home screen or show success
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Google Sign-In failed'),
+                                ),
+                              );
+                            }
                           },
                         ),
                         const SizedBox(width: 20),
@@ -238,7 +294,9 @@ bool _isOtpSent = false;
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _isSignUp ? "Already have an account? " : "Don't have an account? ",
+                        _isSignUp
+                            ? "Already have an account? "
+                            : "Don't have an account? ",
                         style: const TextStyle(color: Colors.grey),
                       ),
                       GestureDetector(
@@ -279,7 +337,9 @@ bool _isOtpSent = false;
       decoration: InputDecoration(
         hintText: hintText,
         prefixIcon: Icon(icon, color: Colors.green),
-        suffixIcon: obscure ? const Icon(Icons.visibility, color: Colors.green) : null,
+        suffixIcon: obscure
+            ? const Icon(Icons.visibility, color: Colors.green)
+            : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
@@ -292,105 +352,44 @@ bool _isOtpSent = false;
       ),
     );
   }
-  Future<void> _startPhoneVerification() async {
-  final phone = phoneController.text.trim();
-  final pass = passwordController.text.trim();
-  final confirmPass = confirmPasswordController.text.trim();
 
-  if (phone.isEmpty || pass.isEmpty || confirmPass.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please fill all fields')));
-    return;
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message.replaceFirst('Exception: ', ''))),
+    );
   }
 
-  if (pass != confirmPass) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Passwords do not match')));
-    return;
-  }
-
-  await FirebaseAuth.instance.verifyPhoneNumber(
-    phoneNumber: '+971$phone', // adjust country code
-    verificationCompleted: (PhoneAuthCredential credential) async {
-      await FirebaseAuth.instance.signInWithCredential(credential);
-    },
-    verificationFailed: (FirebaseAuthException e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification failed: ${e.message}')));
-    },
-    codeSent: (String verificationId, int? resendToken) {
-      setState(() {
-        _verificationId = verificationId;
-        _isOtpSent = true;
-      });
-      _showOtpDialog();
-    },
-    codeAutoRetrievalTimeout: (String verificationId) {
-      _verificationId = verificationId;
-    },
-  );
-}
-
-void _showOtpDialog() {
-  List<TextEditingController> otpControllers = List.generate(6, (_) => TextEditingController());
-
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      title: const Text("Enter OTP"),
-      content: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(
-          6,
-          (index) => SizedBox(
-            width: 40,
-            child: TextField(
-              controller: otpControllers[index],
-              keyboardType: TextInputType.number,
-              maxLength: 1,
-              textAlign: TextAlign.center,
-              decoration: const InputDecoration(counterText: ""),
-              onChanged: (value) {
-                if (value.isNotEmpty && index < 5) {
-                  FocusScope.of(context).nextFocus();
-                }
-              },
+  void _showSignUpSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text(
+          "Welcome to HomeShare",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text("Your account has been successfully created."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              setState(() {
+                _isSignUp = false; // Switch back to login mode
+              });
+            },
+            child: const Text(
+              "Go to Login",
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
+        ],
       ),
-      actions: [
-        ElevatedButton(
-          onPressed: () async {
-            final otp = otpControllers.map((e) => e.text).join();
-            if (otp.length != 6 && otp.length != 4) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Enter valid OTP')));
-              return;
-            }
-
-            try {
-              PhoneAuthCredential credential = PhoneAuthProvider.credential(
-                verificationId: _verificationId,
-                smsCode: otp,
-              );
-
-              await FirebaseAuth.instance.signInWithCredential(credential);
-
-              Navigator.of(context).pop(); // Close dialog
-
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Phone registered successfully')));
-              // TODO: Save user with password to Firestore if needed
-            } catch (e) {
-
-            }
-          },
-          child: const Text("Submit"),
-        ),
-      ],
-    ),
-  );
+    );
+  }
 }
-
-}
-
 
 /// 🎨 BlobPainter (same as yours)
 class BlobPainter extends CustomPainter {
@@ -414,7 +413,8 @@ class BlobPainter extends CustomPainter {
         size.width * 0.75,
         size.height * 0.85 - offset,
         size.width,
-        size.height * 0.8)
+        size.height * 0.8,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -427,7 +427,8 @@ class BlobPainter extends CustomPainter {
         size.width * 0.7,
         size.height * 0.85 + offset,
         size.width,
-        size.height * 0.9)
+        size.height * 0.9,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -440,7 +441,8 @@ class BlobPainter extends CustomPainter {
         size.width * 0.8,
         size.height * 0.95 - offset,
         size.width,
-        size.height * 0.87)
+        size.height * 0.87,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -453,7 +455,8 @@ class BlobPainter extends CustomPainter {
         size.width * 0.9,
         size.height * 0.9 + offset,
         size.width,
-        size.height * 0.92)
+        size.height * 0.92,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
@@ -469,4 +472,3 @@ class BlobPainter extends CustomPainter {
     return oldDelegate.progress != progress;
   }
 }
-

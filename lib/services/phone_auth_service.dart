@@ -1,52 +1,78 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
-class OPhoneAuthProvider with ChangeNotifier {
+class OEmailAuthProvider with ChangeNotifier {
   final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
 
-  String _verificationId = '';
   bool isLoading = false;
 
-  Future<void> sendOtp(String phoneNumber) async {
-    isLoading = true;
-    notifyListeners();
+  Future<fb.User?> signUp(String email, String password, String confirmPassword) async {
+    if (password != confirmPassword) {
+      throw Exception("Passwords do not match");
+    }
 
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (fb.PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-      },
-      verificationFailed: (fb.FirebaseAuthException e) {
-        throw Exception("OTP Verification Failed: ${e.message}");
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        _verificationId = verificationId;
-        isLoading = false;
-        notifyListeners();
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
-      },
-    );
-  }
-
-  Future<fb.User?> verifyOtpAndLogin(String otp, String password) async {
     try {
-      final credential = fb.PhoneAuthProvider.credential(
-        verificationId: _verificationId,
-        smsCode: otp,
-      );
-      final userCredential = await _auth.signInWithCredential(credential);
+      isLoading = true;
+      notifyListeners();
 
-      // Custom logic to verify password after phone auth
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      isLoading = false;
+      notifyListeners();
 
       return userCredential.user;
-    } catch (e) {
-      throw Exception("Invalid OTP: $e");
+    } on fb.FirebaseAuthException catch (e) {
+      isLoading = false;
+      notifyListeners();
+      throw Exception(_getErrorMessage(e.code));
+    }
+  }
+
+  Future<fb.User?> signIn(String email, String password) async {
+    try {
+      isLoading = true;
+      notifyListeners();
+
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      isLoading = false;
+      notifyListeners();
+
+      return userCredential.user;
+    } on fb.FirebaseAuthException catch (e) {
+      isLoading = false;
+      notifyListeners();
+      throw Exception(_getErrorMessage(e.code));
     }
   }
 
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  /// ✅ Convert Firebase error codes into friendly messages
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'invalid-email':
+        return 'The email address is not valid.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'user-not-found':
+        return 'No account found for this email.';
+      case 'wrong-password':
+        return 'Incorrect password. Please try again.';
+      case 'email-already-in-use':
+        return 'This email is already registered. Try signing in instead.';
+      case 'weak-password':
+        return 'Password is too weak. Use at least 6 characters.';
+      default:
+        return 'Something went wrong. Please try again.';
+    }
   }
 }

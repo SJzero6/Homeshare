@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Timer(const Duration(seconds: 3), () {
       
-      Navigator.push(context, SlidePageRoute(page: RootPage()));
+      Navigator.push(context, SlidePageRoute(page: OnboardingPages()));
 
     });
   }

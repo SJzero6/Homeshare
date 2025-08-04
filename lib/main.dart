@@ -5,6 +5,7 @@ import 'package:homeshare/Screens/Animations/theme.dart';
 import 'package:homeshare/Screens/splash_screen.dart';
 import 'package:homeshare/services/gmail_auth_service.dart';
 import 'package:homeshare/services/phone_auth_service.dart';
+import 'package:homeshare/settings/app_routes.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
@@ -21,13 +22,14 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => GmailAuthProvider()),
-        ChangeNotifierProvider(create: (_) => OPhoneAuthProvider()), // ✅ Correct custom provider
+        ChangeNotifierProvider(create: (_) => OEmailAuthProvider()), // ✅ Correct custom provider
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: lightTheme,
         darkTheme: darkTheme,
         themeMode: ThemeMode.system,
+        onGenerateRoute: AppRoutes.generateRoute,
         home: const SplashScreen(),
       ),
     );
