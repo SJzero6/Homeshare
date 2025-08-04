@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "500614630745",
+    "project_id": "homeshare-69b",
+    "storage_bucket": "homeshare-69b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500614630745:android:a63b4ce8a439ef8eacd048",
+        "android_client_info": {
+          "package_name": "com.sjzero6.homeshare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "500614630745-u5mvupdlkjvvu3htacoqj9rnt5o8eqq2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sjzero6.homeshare",
+            "certificate_hash": "2926c27296c840437ea8e15ec03741ab75f8a307"
+          }
+        },
+        {
+          "client_id": "500614630745-qu2mq27oar6uhs3c3m7ca4gq7rlnenh4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADldvO5VR1H6U9Ewnc58qOZ-hcNdmy7hM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "500614630745-qu2mq27oar6uhs3c3m7ca4gq7rlnenh4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "500614630745-r02bqr80kjopn143dhg5fmcnv729vtn8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sjzero6.homeshare"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
