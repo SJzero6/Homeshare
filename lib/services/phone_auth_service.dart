@@ -55,7 +55,11 @@ class OEmailAuthProvider with ChangeNotifier {
   Future<void> signOut() async {
     await _auth.signOut();
   }
-
+  // Future<void> checkLoginStatus() async {
+  //   _auth.currentUser;
+  //   notifyListeners();
+  // }
+    fb.User? get currentUser => _auth.currentUser;
   /// ✅ Convert Firebase error codes into friendly messages
   String _getErrorMessage(String code) {
     switch (code) {

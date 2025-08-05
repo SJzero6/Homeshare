@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:homeshare/Screens/Animations/slide_animation.dart';
 import 'package:homeshare/Screens/tenantSreens/login.dart';
+import 'package:homeshare/settings/app_routes.dart';
 
 class OnboardingPages extends StatefulWidget {
   const OnboardingPages({super.key});
@@ -160,10 +161,10 @@ class _OnboardingPagesState extends State<OnboardingPages>
                                   title: "Tenant",
                                   imagePath: "assets/tenant.png",
                                   onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      SlidePageRoute(page: LoginScreen()),
-                                    );
+                                    Navigator.pushReplacementNamed(
+                                              context,
+                                              AppRoutes.home,
+                                            );
                                   },
                                   isDark: isDark,
                                 ),
